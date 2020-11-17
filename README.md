@@ -24,14 +24,14 @@ Color touchscreen https://www.pjrc.com/store/display_ili9341_touch.html
    |-----|-----|-----|-----|				
    | GND | gnd | Vin | common with Vin(screen) |
    | | 0 | gnd |  |
-   | | 1 | 3.3V | RESET (screen) |   
+   | | 1 | 3.3V |  |   
    | | 2 | 23 | MCLK (audio) |
    | | 3 | 22 | LED  (to screen via a series 100 ohm resistor)|
    | | 4 | 21 | BCLK (audio) |
    | D/C (screen)	| 5	| 20 | LRCLK (audio)|
 |MEMCS (audio)|	6|	19|	SCL (audio)|
 |DIN (audio) |7|18|SDA (audio)|
-|DOUT (audio)|8|17||
+|DOUT (audio)|8|17|RESET (screen)|
 |T_CS (screen)|9|  16|T_IRQ (screen) Not connected|
 |SDCS (audio)|10|15|VOL (audio)|
 |MOSI|11|14|CS (screen)|
@@ -46,7 +46,7 @@ Color touchscreen https://www.pjrc.com/store/display_ili9341_touch.html
 |1 |VCC| common with Vin |				
  |2|GND| common with GND |	
  |3|CS|14|
- |4|RESET	|24 (3.3v)|			
+ |4|RESET	|17|			
  |5|D/C|	5|			
  |6|SDI (MOSI)|	11|			
  |7|SCK|13|
