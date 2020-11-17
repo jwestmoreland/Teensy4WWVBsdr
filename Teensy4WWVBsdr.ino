@@ -56,13 +56,25 @@ time_t getTeensy3Time()
 #define BACKLIGHT_PIN 22
 #define TFT_DC      5
 #define TFT_CS      14
-#define TFT_RST     255  // 255 = unused. connect to 3.3V
+// PR:
+#define TFT_RST	    17    // connect to I/O #17 (or change to available digital/analog I/O)
+// ---
 #define TFT_MOSI     11
 #define TFT_SCLK    13
 #define TFT_MISO    12
 
 #define T4
 
+// PR:
+// comment out the following if screen locks/freezes isn't an issue on your system
+#define TFT_RESET_STROBE_TIME_OUT 10		// 1 is 1 min, 2 is 2 min, ... 10 is 10 min.
+
+#if defined(TFT_RESET_STROBE_TIME_OUT)
+#define TFT_RESET_STROBE
+#endif
+// opt:
+#define SERIAL_COUNTER_TIME_OUT 5000    // so serial port doesn't hang the board
+// ---
 ILI9341_t3 tft = ILI9341_t3(TFT_CS, TFT_DC, TFT_RST, TFT_MOSI, TFT_SCLK, TFT_MISO);
 
 #define SAMPLE_RATE_MIN               0
@@ -100,7 +112,11 @@ AudioControlSGTL5000     sgtl5000_1;
 
 // Metro 1 second
 Metro second_timer = Metro(1000);
-
+// PR:
+#ifdef TFT_RESET_STROBE
+Metro minute_timer = Metro(TFT_RESET_STROBE_TIME_OUT * 60000);
+#endif
+// ---
 const uint16_t FFT_points = 1024;
 //const uint16_t FFT_points = 256;
 
@@ -177,8 +193,18 @@ void loop();
 //=========================================================================
 
 void setup() {
+    unsigned int counter_main = 0;
+	
+    Serial.begin(115200);
+// PR:  (optional - is this an issue with Teensy like the Arduino boards??)
+#if 1
+  // in case serial port isn't connected so we don't hang the program:
+	do {
+		counter_main++;
 
-  Serial.begin(115200);
+	} while ( !Serial && ( counter_main < SERIAL_COUNTER_TIME_OUT) );
+#endif
+// ---	
   //Serial.begin(9600);
 
   setSyncProvider(getTeensy3Time);
@@ -196,6 +222,7 @@ void setup() {
   // Init TFT display
   pinMode( BACKLIGHT_PIN, OUTPUT );
   analogWrite( BACKLIGHT_PIN, 1023 );
+// PR:  Note - in tft.begin() - TFT_RST handled as digital pin vs. analog.  
   tft.begin();
   tft.setRotation( 3 );
   tft.fillScreen(ILI9341_BLACK);
@@ -206,7 +233,7 @@ void setup() {
   tft.setTextColor(ILI9341_WHITE);
 
   displaySettings();
-
+  delay(5000);					// so you can see the settings.
   set_sample_rate (sample_rate);
   set_freq_LO (freq_real);
 
@@ -244,6 +271,22 @@ void loop() {
     }
   }
   //  check_processor();
+// PR:  
+#ifdef TFT_RESET_STROBE
+  if ( TFT_RESET_STROBE_TIME_OUT > 0 ) {        // more robust check here needed possibly?
+  if ( minute_timer.check() == 1 ) {
+//	  pinMode( TFT_RST, OUTPUT);
+	  analogWrite(TFT_RST, 1023);		// tft.begin() _rst - using digital vs. analog write.
+	  delay(5);
+	  analogWrite(TFT_RST, 0);
+	  delay(20);
+	  analogWrite(TFT_RST, 1023);
+	  delay(150);
+	  Serial.printf("\r\n:SCREEN RESET:\r\n");  // just for debug - screen will freeze momentarily then resume
+  }
+ }
+#endif
+// ---
 }
 
 void set_mic_gain(int8_t gain) {
